@@ -21,7 +21,7 @@ def scale_frames(frames):
 GREEDY POLICY
 """
 def greedy(action_values):
-    return np.argmax(action_values.detach().numpy())
+    return np.argmax(action_values.detach().cpu().numpy())
 
 
 """
@@ -38,7 +38,7 @@ def eps_greedy(action_values, eps=0.1):
 CALCULATE TARGET VALUE FOR EACH TRANSITION
 """
 def q_target_values(mb_reward, mb_done, action_values, discounted):
-    max_av = np.max(action_values.detach().numpy(), axis=1)
+    max_av = np.max(action_values.detach().cpu().numpy(), axis=1)
     
     ys = []
     for r, d, av in zip(mb_reward, mb_done, max_av):
@@ -65,7 +65,7 @@ def test_agent(env, agent_op, num_games=20):
         obs = env.reset()
         
         while not done:
-            action = eps_greedy(agent_op(obs), eps=0.05)
+            action = eps_greedy(agent_op(obs).cuda(), eps=0.05)
             obs, reward, done, _ = env.step(action)
             game_reward += reward
         

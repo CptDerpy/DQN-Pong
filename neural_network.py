@@ -80,5 +80,5 @@ class DNN(nn.Module):
     
     def loss(self, action_values, target_values):
         # Mean Squared Error
-        return F.mse_loss(action_values.squeeze(), torch.FloatTensor(target_values))
+        return F.mse_loss(action_values.squeeze(), torch.FloatTensor(target_values).cuda())
         

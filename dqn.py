@@ -29,10 +29,10 @@ def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, re
     
     
     # Initialize Q function with random weight
-    Q = DNN(obs_dim, n_outputs, lr)
+    Q = DNN(obs_dim, n_outputs, lr).cuda()
     
     # Initialize Q_target function with random weight equal to Q's weight
-    Q_target = DNN(obs_dim, n_outputs, lr)
+    Q_target = DNN(obs_dim, n_outputs, lr).cuda()
     Q_target.load_state_dict(Q.state_dict())
     
     # Initialize empty replay memory
@@ -49,7 +49,7 @@ def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, re
     
     def agent_op(obs):
         obs = scale_frames(obs)
-        obs = torch.from_numpy(obs).float()
+        obs = torch.from_numpy(obs).cuda()
         return Q.forward(obs)
     
     
@@ -61,7 +61,7 @@ def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, re
         
         while not done:
             # Collect observation from environment
-            action = eps_greedy(np.squeeze(agent_op(obs)), eps)
+            action = eps_greedy(agent_op(obs).squeeze(), eps)
             new_obs, reward, done, _ = env.step(action)
             
             # Store transition in replay buffer
@@ -82,10 +82,10 @@ def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, re
                 mb_obs, mb_reward, mb_action, mb_obs2, mb_done = exp_buffer.sample_minibatch(batch_size)
                 
                 # Calculate action values
-                av = Q.forward(torch.from_numpy(mb_obs).float()).gather(1, torch.LongTensor(mb_action).unsqueeze(1))
+                av = Q.forward(torch.from_numpy(mb_obs).cuda()).gather(1, torch.LongTensor(mb_action).unsqueeze(1).cuda())
                 
                 # Calculate target values
-                mb_target_qv = Q_target.forward(torch.from_numpy(mb_obs2).float())
+                mb_target_qv = Q_target.forward(torch.from_numpy(mb_obs2).cuda())
                 y_r = q_target_values(mb_reward, mb_done, mb_target_qv, discount)
                 
                 # Update gradient
