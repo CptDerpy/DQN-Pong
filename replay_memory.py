@@ -6,8 +6,8 @@ Created on Fri Nov 15 23:45:43 2019
 """
 
 from collections import deque
-from functions import scale_frames
 import numpy as np
+import torch
 
 
 """
@@ -32,11 +32,11 @@ class ExperienceBuffer():
     def sample_minibatch(self, batch_size):
         mb_idxs = np.random.randint(len(self.obs_buffer), size=batch_size)
         
-        mb_obs = scale_frames([self.obs_buffer[i] for i in mb_idxs])
-        mb_reward = [self.reward_buffer[i] for i in mb_idxs]
-        mb_action = [self.action_buffer[i] for i in mb_idxs]
-        mb_obs2 = scale_frames([self.obs2_buffer[i] for i in mb_idxs])
-        mb_done = [self.done_buffer[i] for i in mb_idxs]
+        mb_obs = torch.stack([self.obs_buffer[i] for i in mb_idxs])
+        mb_reward = torch.stack([self.reward_buffer[i] for i in mb_idxs])
+        mb_action = torch.stack([self.action_buffer[i] for i in mb_idxs])
+        mb_obs2 = torch.stack([self.obs2_buffer[i] for i in mb_idxs])
+        mb_done = torch.stack([self.done_buffer[i] for i in mb_idxs])
         
         return mb_obs, mb_reward, mb_action, mb_obs2, mb_done
         

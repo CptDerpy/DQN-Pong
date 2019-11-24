@@ -62,8 +62,6 @@ class DNN(nn.Module):
         
         
     def forward(self, x):
-        if len(x.shape) < 4:
-            x = x.unsqueeze(0)
         x = x.view(x.shape[0], x.shape[3], x.shape[1], x.shape[2])
         x = self.conv1(x)
         x = F.relu(x)
@@ -80,5 +78,5 @@ class DNN(nn.Module):
     
     def loss(self, action_values, target_values):
         # Mean Squared Error
-        return F.mse_loss(action_values.squeeze(), torch.FloatTensor(target_values).cuda())
+        return F.mse_loss(action_values, target_values)
         

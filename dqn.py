@@ -13,6 +13,9 @@ from functions import scale_frames, eps_greedy, q_target_values, test_agent
 from time import time
 import numpy as np
 import torch
+import sys
+from torch import FloatTensor
+from torch.autograd import Variable
 
 
 """
@@ -48,26 +51,33 @@ def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, re
     eps_decay = (start_explore - end_explore) / explore_steps
     
     def agent_op(obs):
-        obs = scale_frames(obs)
-        obs = torch.from_numpy(obs).cuda()
-        return Q.forward(obs)
+        obs = scale_frames(obs).unsqueeze(0)
+        return Q.forward(Variable(obs, requires_grad=False))
     
     
     for episode in range(num_episodes):
-        print('Episode:', episode)
+        print('\nEpisode:', episode)
         
         game_reward = 0
         done = False
         
         while not done:
+            sys.stdout.write(f'\rStep {step_count}')
+            sys.stdout.flush()
             # Collect observation from environment
-            action = eps_greedy(agent_op(obs).squeeze(), eps)
-            new_obs, reward, done, _ = env.step(action)
+            action = eps_greedy(agent_op(obs), eps)
+            new_obs, reward, done, _ = env.step(int(action))
             
             # Store transition in replay buffer
 #            if len(exp_buffer) > buffer_size:
 #                exp_buffer.pop()
-            exp_buffer.add(obs, reward, action, new_obs, done)
+            exp_buffer.add(
+                    scale_frames(obs),
+                    FloatTensor([reward]).cuda(),
+                    action,
+                    scale_frames(new_obs),
+                    FloatTensor([done]).cuda()
+                    )
             
             obs = new_obs
             game_reward += reward
@@ -82,10 +92,10 @@ def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, re
                 mb_obs, mb_reward, mb_action, mb_obs2, mb_done = exp_buffer.sample_minibatch(batch_size)
                 
                 # Calculate action values
-                av = Q.forward(torch.from_numpy(mb_obs).cuda()).gather(1, torch.LongTensor(mb_action).unsqueeze(1).cuda())
+                av = Q.forward(mb_obs).gather(1, mb_action)
                 
                 # Calculate target values
-                mb_target_qv = Q_target.forward(torch.from_numpy(mb_obs2).cuda())
+                mb_target_qv = Q_target.forward(mb_obs2).detach()
                 y_r = q_target_values(mb_reward, mb_done, mb_target_qv, discount)
                 
                 # Update gradient
@@ -101,14 +111,17 @@ def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, re
             # Update target network:
             # Every C steps set Q_target's weight equal to Q's weight
             if (len(exp_buffer) > min_buffer_size) and (step_count % update_target_net == 0):
+                print('Updating target network')
                 Q_target.load_state_dict(Q.state_dict())
                 last_update_loss = []
             
             if done:
                 obs = env.reset()
                 batch_reward.append(game_reward)
+                print()
                 
         if (episode+1) % test_freq == 0:
+            print('Testing target network')
             test_reward = test_agent(test_env, agent_op, num_games=10)
             print('Ep: {:3d} Rew: {:3.2f}, Eps: {:1.2f} -- Step: {:4d} -- Test: {:3.2f} {:3.2f}'.format(episode, np.mean(batch_reward), eps, step_count, np.mean(test_reward), np.std(test_reward)))
     
