@@ -5,12 +5,11 @@ Created on Fri Nov 15 16:39:51 2019
 @author: August
 """
 
-from os import mkdir
 #from gym.wrappers import Monitor
 from atari_wrappers import make_env
 from neural_network import DNN
 from replay_memory import ExperienceBuffer
-from time import time
+from datetime import datetime
 import pickle
 import numpy as np
 import torch
@@ -48,7 +47,8 @@ def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, re
     
     env = make_env(env_name, frames_num=frames_num, skip_frames=True, noop_num=20)
     test_env = make_env(env_name, frames_num=frames_num, skip_frames=True, noop_num=20)
-    init_time = int(time()*1000)
+    
+    init_time = datetime.isoformat(datetime.now()).replace(':', '-')[:-7]
  #   test_env = Monitor(test_env, f'videos/{env_name}_{init_time}', force=True, video_callable=lambda x: x % 20 == 0)
     
     obs_dim = env.observation_space.shape
@@ -57,6 +57,20 @@ def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, re
     
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     writer = SummaryWriter(f'runs/{env_name}_{init_time}')
+    with open(f'runs/{env_name}_{init_time}/hyperparams.txt', 'w') as file:
+        file.write(f"Learning rate:\t\t {lr}\n")
+        file.write(f"Episodes:\t\t {num_episodes}\n")
+        file.write(f"Buffer size:\t\t {buffer_size}\n")
+        file.write(f"Discount:\t\t {discount}\n")
+        file.write(f"Update target:\t\t {update_target_net}\n")
+        file.write(f"Batch size:\t\t {batch_size}\n")
+        file.write(f"Update frequenzy:\t {update_freq}\n")
+        file.write(f"Frames num:\t\t {frames_num}\n")
+        file.write(f"Min. buffer size:\t {min_buffer_size}\n")
+        file.write(f"Test Frequenzy:\t\t {test_freq}\n")
+        file.write(f"Start exploration:\t {start_explore}\n")
+        file.write(f"End exploration:\t {end_explore}\n")
+        file.write(f"Exploration steps:\t {explore_steps}")
     # Open summary by running tensorboard --logdir=runs from the command line and opening https://localhost:6006
     
     
@@ -164,9 +178,9 @@ def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, re
             writer.add_scalar('test reward', np.mean(test_reward), step_count)
             print('Ep: {:3d} Rew: {:3.2f}, Eps: {:1.2f} -- Step: {:4d} -- Test: {:3.2f} {:3.2f}'.format(episode, np.mean(batch_reward), eps, step_count, np.mean(test_reward), np.std(test_reward)))
     
-    #mkdir(f'{env_name}_{init_time}')    
-    torch.save(Q.state_dict(), f'runs/{env_name}_{init_time}/Q_params.pt')
-    torch.save(Q_target.state_dict(), f'runs/{env_name}_{init_time}/Q_target_params.pt')
+            torch.save(Q.state_dict(), f'runs/{env_name}_{init_time}/Q_params.pt')
+            torch.save(Q_target.state_dict(), f'runs/{env_name}_{init_time}/Q_target_params.pt')
+            
     with open(f'runs/{env_name}_{init_time}/replay_buffer.dat', 'wb') as out_file:
         pickle.dump(exp_buffer, out_file)
     env.close()
