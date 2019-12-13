@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Nov 15 23:45:43 2019
-
-@author: August
-"""
 
 from collections import deque
 import numpy as np

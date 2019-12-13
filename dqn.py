@@ -1,21 +1,16 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Nov 15 16:39:51 2019
-
-@author: August
-"""
 
 #from gym.wrappers import Monitor
-from atari_wrappers import make_env
-from neural_network import DNN
-from replay_memory import ExperienceBuffer
-from datetime import datetime
 import pickle
 import numpy as np
 import torch
+from datetime import datetime
 from torch import FloatTensor, LongTensor
 from torch.autograd import Variable
 from torch.utils.tensorboard import SummaryWriter
+from atari_wrappers import make_env
+from neural_network import DNN
+from replay_memory import ExperienceBuffer
 
 
 """
@@ -181,8 +176,8 @@ def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, re
             torch.save(Q.state_dict(), f'runs/{env_name}_{init_time}/Q_params.pt')
             torch.save(Q_target.state_dict(), f'runs/{env_name}_{init_time}/Q_target_params.pt')
             
-    with open(f'runs/{env_name}_{init_time}/replay_buffer.dat', 'wb') as out_file:
-        pickle.dump(exp_buffer, out_file)
+    # with open(f'runs/{env_name}_{init_time}/replay_buffer.dat', 'wb') as out_file:
+    #     pickle.dump(exp_buffer, out_file)
     env.close()
     test_env.close()
     
