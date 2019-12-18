@@ -1,12 +1,12 @@
 #!/bin/sh
 #BSUB -q gpuv100
 #BSUB -gpu "num=1"
-#BSUB -J dqn_train_28-11-19T22-16
+#BSUB -J dqn_huber
 #BSUB -n 4
 #BSUB -W 24:00
 #BSUB -R "span[hosts=1]"
-#BSUB -R "rusage[mem=32GB]"
-#BSUB -R "select[gpu32gb]"
+#BSUB -R "rusage[mem=8GB]"
+##BSUB -R "select[gpu32gb]"
 ##BSUB -R "select[sxm2]"
 #BSUB -o logs/%J.out
 #BSUB -e logs/%J.err

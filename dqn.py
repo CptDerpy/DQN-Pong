@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 
-#from gym.wrappers import Monitor
-import pickle
+# from gym.wrappers import Monitor
+# import pickle
 import numpy as np
 import torch
 from datetime import datetime
 from torch import FloatTensor, LongTensor
 from torch.autograd import Variable
 from torch.utils.tensorboard import SummaryWriter
-from atari_wrappers import make_env
+# from atari_wrappers import make_env
+import gym
+from gym.wrappers import AtariPreprocessing, FrameStack
 from neural_network import DNN
 from replay_memory import ExperienceBuffer
 
@@ -38,10 +40,12 @@ def test_agent(env, Q_target, num_games=20):
 """
 DQN
 """
-def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, render_cycle=100, update_target_net=1000, batch_size=64, update_freq=4, frames_num=2, min_buffer_size=5000, test_freq=20, start_explore=1, end_explore=0.1, explore_steps=1e5):
+def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, update_target_net=1000, batch_size=64, update_freq=4, frames_num=2, min_buffer_size=5000, test_freq=20, start_explore=1, end_explore=0.1, explore_steps=1e5):
     
-    env = make_env(env_name, frames_num=frames_num, skip_frames=True, noop_num=20)
-    test_env = make_env(env_name, frames_num=frames_num, skip_frames=True, noop_num=20)
+    # env = make_env(env_name, frames_num=frames_num, skip_frames=True, noop_num=20)
+    # test_env = make_env(env_name, frames_num=frames_num, skip_frames=True, noop_num=20)
+    env = FrameStack(AtariPreprocessing(gym.make(env_name)), frames_num)
+    test_env = FrameStack(AtariPreprocessing(gym.make(env_name)), frames_num)
     
     init_time = datetime.isoformat(datetime.now()).replace(':', '-')[:-7]
  #   test_env = Monitor(test_env, f'videos/{env_name}_{init_time}', force=True, video_callable=lambda x: x % 20 == 0)
@@ -53,6 +57,7 @@ def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, re
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     writer = SummaryWriter(f'runs/{env_name}_{init_time}')
     with open(f'runs/{env_name}_{init_time}/hyperparams.txt', 'w') as file:
+        file.write("FIXED TARGET DQN\n\n")
         file.write(f"Learning rate:\t\t {lr}\n")
         file.write(f"Episodes:\t\t {num_episodes}\n")
         file.write(f"Buffer size:\t\t {buffer_size}\n")
@@ -133,8 +138,10 @@ def DQN(env_name, lr=1e-2, num_episodes=2000, buffer_size=1e5, discount=0.99, re
                 qv = Q.forward(mb_obs).gather(1, mb_action.unsqueeze(1)).squeeze()
                 
                 # Calculate target values
+                # DQN
                 mb_target_qv = Q_target.forward(mb_obs2).max(1)[0]
-#                y_r = q_target_values(mb_reward, mb_done, mb_target_qv, discount)
+                # Double DQN
+                # mb_target_qv = Q_target.forward(mb_obs2).gather(1, Q.forward(mb_obs2).max(1)[1].unsqueeze(1)).squeeze()
                 
                 # Calculate expected values
                 e_qv = mb_reward + discount * mb_target_qv * (1 - mb_done)
