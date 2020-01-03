@@ -1,6 +1,7 @@
 # DQN-Pong
 For DTU course 02456 Deep Learning (E19)
 
+
 Jesper Rask Lykke (s144950) & August Birk Olsen (s154110)
 Digital Media Engineering, Technical University of Denmark
 
